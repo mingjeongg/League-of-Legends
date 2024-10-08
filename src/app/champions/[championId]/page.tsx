@@ -1,5 +1,5 @@
 import { ChampionDetail } from "@/types/Champion";
-import { Error } from "@/types/Error";
+import { Error } from "@/types/FetchError";
 
 import { fetchChampionDetail, fetchVersion } from "@/utils/serverApi";
 import Image from "next/image";

@@ -6,7 +6,7 @@
 // 즉 서버사이드렌더링에 클라이언트 컴포넌트를 끼워넣는거다
 
 import { Champion } from "@/types/Champion";
-import { Error } from "@/types/Error";
+import { Error } from "@/types/FetchError";
 import { fetchVersion } from "@/utils/serverApi";
 import Image from "next/image";
 import Link from "next/link";
