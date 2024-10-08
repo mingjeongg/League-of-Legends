@@ -9,7 +9,7 @@ const nextConfig = {
         // port: "",
         // pathname: hostname으로 시작하는 모든 이미지를 허용하겠다
         // pathname: "/test/**"
-        // hostname/test/로 시작하는 모든 이미지 허용하겠다
+        // hostname/test/~~로 시작하는 모든 이미지 허용하겠다
         pathname: "/**",
       },
     ],

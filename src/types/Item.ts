@@ -3,11 +3,11 @@ export type Item = {
   plaintext: string;
   image: {
     full: string;
-    sprite: string;
-    group: string;
-    x: number;
-    y: number;
-    w: number;
-    h: number;
+  };
+  tags: string[];
+  gold: {
+    base: number;
+    purchasable: boolean;
+    sell: number;
   };
 };

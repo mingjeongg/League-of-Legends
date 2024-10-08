@@ -6,33 +6,44 @@
 // > - 각 함수의 반환 타입을 정확하게 명시하여 타입 안전성을 확보하세요.
 // > - 함수의 매개변수에도 타입을 지정하여 입력값의 타입을 체크하세요.
 
-import { Champion } from "@/types/Champion";
 import { fetchChampionList, fetchVersion } from "@/utils/serverApi";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
 const ChampionListPage = async () => {
-  const data = await fetchChampionList();
   const version = await fetchVersion();
+  const data = await fetchChampionList();
+
   return (
     <div>
-      <h1>챔피언 로테이션</h1>
-      {data.map((champion) => {
-        return (
-          <Link key={champion.name} href={`/champions/${champion.name}`}>
-            <Image
-              // image는 롤에 있음 하면 lol doc가서 이미지 주소 가져와야함.
-              src={`https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champion.name}.png`}
-              alt="이미지 없음"
-              width={champion.image.w}
-              height={champion.image.h}
-            />
-            <h2>{champion.name}</h2>
-            <p>{champion.title}</p>
-          </Link>
-        );
-      })}
+      <h1 className=" ml-10 text-3xl font-bold mt-10 mb-4 text-rose-700">
+        챔피언 목록
+      </h1>
+      <div className="grid grid-cols-4 gap-4 m-10">
+        {data.map((champion) => {
+          return (
+            <Link
+              className="p-4 border rounded flex flex-col items-center justify-center "
+              key={champion.name}
+              href={`/champions/${champion.id}`}
+            >
+              <Image
+                // image는 롤에 있음 하면 lol doc가서 이미지 주소 가져와야함.
+                // lol측이 이미지 가져가고 싶으면 id의 value를 사용하라했는데 난 값이 똑같단 이유로 name의 value를 사용해서 문제 생겼었음
+                src={`https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champion.id}.png`}
+                alt="이미지 없음"
+                width={100}
+                height={100}
+              />
+              <h2 className="mt-2 text-xl font-semibold text-rose-700">
+                {champion.name}
+              </h2>
+              <p className="text-gray-500">{champion.title}</p>
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 };

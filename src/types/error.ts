@@ -1,4 +1,4 @@
-export type ChampionDetailError = {
-  errorMessage: string;
-  statusCode: number;
+export type Error = {
+  message: string;
+  status: number;
 };

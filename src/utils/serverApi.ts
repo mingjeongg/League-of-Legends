@@ -1,11 +1,11 @@
 "use server";
-import { Props } from "@/app/champions/[championId]/page";
+
 // 이렇게 server action으로 처리하면 데이터 불러오고 이런걸 브라우저에서 하는게 아니라 서버에서 하는거다보니
 // 어떤 주소에서 가져오는지 이런 주소가 브라우저에서 드러날 일이 없어서 보안성에 좋음
 // 그리고 원하는 데이터만 커스텀 해서 들고 올 수 있음
 
-import { Champion, ChampionDetail, ChampionName } from "@/types/Champion";
-import { ChampionDetailError } from "@/types/error";
+import { Champion } from "@/types/Champion";
+import { Item } from "@/types/Item";
 
 // Server Actions를 활용하여 API Route Handlers의 사용을 최소화하며,
 // 서버 컴포넌트 내에서 직접 API 데이터를 페칭하고 처리합니다.
@@ -20,10 +20,14 @@ export async function fetchVersion() {
   return data[0];
 }
 
+//champion 목록 데이터는 자주 변경 되는게 아니라서 isr을 통해서 성능 최적화시킴
 export async function fetchChampionList() {
   const version = await fetchVersion();
   const res = await fetch(
-    `https://ddragon.leagueoflegends.com/cdn/${version}/data/ko_KR/champion.json`
+    `https://ddragon.leagueoflegends.com/cdn/${version}/data/ko_KR/champion.json`,
+    {
+      next: { revalidate: 864000 },
+    }
   );
   const { data } = await res.json();
   // map을 사용하기위해서, 객체의 value만 뽑아내기위해 객체의 value를 배열로 바꾸는 메서드
@@ -53,36 +57,57 @@ export async function fetchChampionList() {
 }
 
 // 여기서 인자로 받는 {params}는 champions[championId] 페이지에서 받아온 것
-export async function fetchChampionDetail({ params }: Props) {
+export async function fetchChampionDetail(championId: string) {
   const version = await fetchVersion();
-  const id: string = params.championId;
-
-  // 챔피언 ID가 유효하지 않을 경우 적절한 에러 메시지와 상태 코드를 반환하게 함
-  // championDetail 페이지에서 fetchChampionDetail을 호출하는데 championId가 유효하지 않으면
-  // errorPayload를 받게 해서 또 뭐 어떻게 처리
-  if (typeof id !== "string") {
-    const errorPayload: ChampionDetailError = {
-      errorMessage: "시발 챔피언 id가 유효하지 않습니다",
-      statusCode: 400,
-    };
-    return errorPayload;
-  }
 
   const res = await fetch(
-    `https://ddragon.leagueoflegends.com/cdn/${version}/data/ko_KR/champion/${id}.json`
+    `https://ddragon.leagueoflegends.com/cdn/${version}/data/ko_KR/champion/${championId}.json`
   );
 
   // 받은 res에서 data 필드만 추출
-  const { data }: ChampionName = await res.json();
+  const { data } = await res.json();
 
-  return data;
+  // console.log(res) 찍고 ok 라는 key 존재하는지 부터 확인 -> 있으면 아래처럼 써서 오류 처리 해줄 수 있다
+  // 여기서 res는 즉 json화 하기 전
+  if (!res.ok) {
+    return {
+      message: "Please enter a valid Champion Name",
+      status: res.status,
+    };
+  }
+
+  // data 구조상 객체안의 championId의 객체에 접근 해야 했음
+  // 근데 이 championId는 '동적'(고정값 X) -> data.championId 안돼, data[championId]로 해야 접근해서 가져 올 수 있음
+  return data[championId];
 }
 
 export async function fetchItems() {
   const version = await fetchVersion();
   const res = await fetch(
-    ` https://ddragon.leagueoflegends.com/cdn/${version}/data/ko_KR/item.json`
+    `https://ddragon.leagueoflegends.com/cdn/${version}/data/ko_KR/item.json`
   );
   // 응답 데이터(res)에서 data 필드를 추출
   const { data } = await res.json();
+
+  return data;
+}
+
+export async function fetchItemDetail(itemName: string) {
+  // 인자로 props.params.itemName을 받을때 encoding 돼서 넘어옴
+  // 즉 이상하게 넘어왔음 (%23C 막 이런식으로) 하여 디코딩 해줘야 했음
+  const decodingItemName = decodeURIComponent(itemName);
+  const version = await fetchVersion();
+  const res = await fetch(
+    `https://ddragon.leagueoflegends.com/cdn/${version}/data/ko_KR/item.json`
+  );
+
+  const { data } = await res.json();
+
+  const dataArr: Item[] = Object.values(data);
+
+  const theItemData = dataArr.filter((item) => {
+    return item.name === decodingItemName;
+  });
+
+  return theItemData[0];
 }

@@ -2,6 +2,8 @@
 // 왜? - 서버사이드에서는 그냥 fetch해오면 되는데, 클라이언트사이드에서는 useEffect하고 뭐 자잘히 할 거 많다
 // 그래서 클라이언트사이드에서 라우트 핸들러 사용한다
 
+import { ChampionRotation } from "@/types/ChampionRotation";
+import { fetchChampionList } from "@/utils/serverApi";
 import { NextResponse } from "next/server";
 
 // (request: Reauest) 적으면 eslint no-unused-vars 라는 오류가 난다. 즉 사용안하는 변수가 있다고 warning으로 잡아준다
@@ -24,11 +26,39 @@ export async function GET() {
       cache: "no-store",
     }
   );
+
+  // json 하기 전 즉 말그대로 res에 ok라는 객체 있다. json(res)에는 없다
+  // !!!!!!!!!!!!!!!!!! error가 났을땐 아래 객체를 반환하는거고 이도 route handler로 만든 함수가 return하는 값이고
+  // data 대신 이 객체를 return 하는거라 data return 하는 것 처럼 통신 언어로 내뱉어줘야해서 NextResponse.json()이 필요
+  if (!res.ok) {
+    return NextResponse.json({
+      message: "챔피언 로테이션 목록을 불러오는데 실패하였습니다",
+      status: res.status,
+    });
+  }
+  // -------- error처리 하는데 좀 더 쉬운 방법
+  // 아래처럼 적으면 error를 가까운 error.tsx로 던져줌 그리고 error.tsx에서 erroor 처리함
+  // if (!res.ok) {
+  //   throw new Error("챔피언 로테이션 목록을 불러오는데 실패하였습니다");
+  // }
+
   // res.json 하면 {freeChampions:[], forNewPlayers:[]}가 있는데 난 freeCham만 필요해서 구조분해할당 활용하여 딱 필요한 데이터만 return 하게 처리
-  const { freeChampionIds } = await res.json();
+  const { freeChampionIds }: ChampionRotation = await res.json();
+
+  const championLisData = await fetchChampionList();
+  const data = championLisData.filter((champion) => {
+    return freeChampionIds.includes(Number(champion.key));
+  });
+  // freeChampionIds는 champion key로 이루어진 숫자 배열
+  // 이 champion key를 가진 캐릭터들을 championListData에서 뽑아내야함
+  //   각 챔피언 객체에서 key를 가져와 숫자로 변환합니다(Number(champion.key)).
+  // 이 변환된 key가 freeChampionIds 배열에 포함되어 있는지를 확인합니다.
+  // includes 메소드는 주어진 값이 배열에 존재하면 true를, 아니면 false를 반환합니다.
+  // 결과적으로, key가 freeChampionIds에 포함된 챔피언들만 새로운 배열에 남게 됩니다.
+  // ===> 즉 filter 메소드는 배열을 하나하나 돌며 champion을 하나씩 넣고 return 뒤에 식이 true면 그 champion을 뱉는 것
 
   // 서버에서 주는 응답이니까 다시 서버와 클라이언트가 통신하는 형식 string형식으로 바꿔줘야지
-  return NextResponse.json({ freeChampionIds });
+  return NextResponse.json(data);
   // Response.json(data)로 써도 되는데 next.js로부터 import 해와서 쓰는 NextResponse는 next.js에  좀 더 최적화 돼있다
 }
 
